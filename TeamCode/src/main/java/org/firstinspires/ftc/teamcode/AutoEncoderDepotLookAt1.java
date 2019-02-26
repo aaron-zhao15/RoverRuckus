@@ -29,28 +29,39 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
+import android.util.DisplayMetrics;
+
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.sun.source.tree.LabeledStatementTree;
+import com.vuforia.Frame;
+import com.vuforia.Image;
+import com.vuforia.PIXEL_FORMAT;
 
+import org.firstinspires.ftc.robotcontroller.external.samples.HardwarePushbot;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
 
-@Autonomous(name = "EncoderDepotLookAt2 w/o drop")
+@Autonomous(name = "EncoderDepotLookAt1")
 
-public class AutoEncoderDepotLookAt2 extends LinearOpMode {
+public class AutoEncoderDepotLookAt1 extends LinearOpMode {
 
     /* Declare OpMode members. */
     HardwareConfig         robot   = new HardwareConfig();   // Use a Pushbot's hardware
     private ElapsedTime     runtime = new ElapsedTime();
 
-    static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
+    static final double     COUNTS_PER_MOTOR_REV    = 1440 ;    // eg: TETRIX Motor Encoder
     static final double     DRIVE_GEAR_REDUCTION    = 2.0 ;     // This is < 1.0 if geared UP
     static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
@@ -110,165 +121,128 @@ public class AutoEncoderDepotLookAt2 extends LinearOpMode {
         robot.mFrontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         robot.mFrontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
+
+
+        // Send telemetry message to indicate successful Encoder reset
+        telemetry.addData("Path0",  "Starting at %7d :%7d :%7d :%7d");
+            robot.mBackLeft.getCurrentPosition();
+            robot.mBackRight.getCurrentPosition();
+            robot.mFrontLeft.getCurrentPosition();
+            robot.mFrontRight.getCurrentPosition();
+        telemetry.update();
+
         robot.liftMotor.setPower(0);
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-/*
+
         robot.liftMotor.setPower(-0.8);
-        sleep(2000);
+        sleep(1400);
         robot.liftMotor.setPower(0);
-*/
+
         //move to the right for a bit
         strafeSideEncoder(0.3, 2);
-/*
+
         robot.armTop.setPower(-0.2);
-        sleep(250);
+        sleep(300);
         robot.armTop.setPower(0);
 
+        strafeForwardEncoder(0.3, 1);
+
         robot.liftMotor.setPower(0.8);
-        sleep(2000);
+        sleep(1400);
         robot.liftMotor.setPower(0);
 
-*/
-        //turn to face the jewels
-        rotEncoder(-0.3, 10.5);
+        //move back
+        strafeSideEncoder(-0.3, 2);
 
-        //align in the middle of the center and right minerals
-        strafeForwardEncoder(0.3, 2);
+        //move forward a bit
+        strafeForwardEncoder(0.3, 4);
 
-        //move back to see the jewels
-        strafeSideEncoder(0.3, 1);
+        //rotate camera towards the jewels
+        rotEncoder(-0.3, 9);
 
-        // Step through each leg of the path,
-        // Note: Reverse movement is obtained by setting a negative distance (not speed)
-        if (tfod != null) {
-            tfod.activate();
-        }
+        //tfod.activate();
 
-        while (getRuntime() < 16) {
-
-            if (tfod != null) {
-                // getUpdatedRecognitions() will return null if no new information is available since
-                // the last time that call was made.
-                List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
-                if (updatedRecognitions != null) {
-                    telemetry.addData("# Object Detected", updatedRecognitions.size());
-
-                    if (updatedRecognitions.size() == 2) {
-                        int goldMineralX = -1;
-                        int silverMineral1X = -1;
-                        int silverMineral2X = -1;
-                        for (Recognition recognition : updatedRecognitions) {
-                            if (recognition.getLabel().equals(LABEL_GOLD_MINERAL)) {
-                                goldMineralX = (int) recognition.getLeft();
-                            } else if (silverMineral1X == -1) {
-                                silverMineral1X = (int) recognition.getLeft();
-                            } else {
-                                silverMineral2X = (int) recognition.getLeft();
-                            }
-                        }
-                        if (silverMineral1X != -1 && silverMineral2X != -1) {
-                            jewelPos = 1;
-                            telemetry.addData("Gold Mineral Position", "Left");
-                            telemetry.update();
-                        }
-                        else if (goldMineralX != -1 && silverMineral1X != -1) {
-                            if (goldMineralX > silverMineral1X) {
-                                jewelPos = 3;
-                                telemetry.addData("Gold Mineral Position", "Right");
-                                telemetry.update();
-                            } else {
-                                jewelPos = 2;
-                                telemetry.addData("Gold Mineral Position", "Center");
-                                telemetry.update();
-                            }
-                        } else {
-                            telemetry.addData("Gold Mineral Position", "Unknown");
-                        }
-                    }
-
-                }
-            }
-            telemetry.addData("Runtime: ", getRuntime());
-            telemetry.update();
-        }
-
-        if (tfod != null) {
-            tfod.shutdown();
-        }
-
-        //realign
-        strafeSideEncoder(-0.3, 1);
-
-        //move closer to the jewels
-        strafeSideEncoder(-0.3, 8);
-
-        if (jewelPos == 1){
-            telemetry.addData("Gold Mineral Position", "Left");
-            telemetry.update();
-            //jewel position: left
-
-            //align in front of the gold mineral
-            strafeForwardEncoder(-0.3, 12.5);
-
-            //knock off the jewel
-            strafeSideEncoder(-0.3, 15);
-
-            //align with the depot
-            rotEncoder(0.3, 5.25);
-
-            //move to the depot
-            strafeForwardEncoder(0.3, 12);
-
-        }
-        else if (jewelPos == 3){
-            telemetry.addData("Gold Mineral Position", "Right");
-            telemetry.update();
-            //jewel position: right
-
-            //align in front of the gold mineral
-            strafeForwardEncoder(0.3, 4);
-
-            //knock off the mineral and go to the wall
-            strafeSideEncoder(-0.3, 16);
-
-            //align with the depot
-            rotEncoder(0.3, 5.25);
-
-            //go closer to the depot
-            strafeSideEncoder(-0.3, 13.5);
-
-        }
-        else if (jewelPos == 2){
+        if(checkGold()){
             telemetry.addData("Gold Mineral Position", "Center");
             telemetry.update();
             //jewel position: middle or unknown
 
-            //align with the gold mineral in the center
-            strafeForwardEncoder(-0.3, 5);
 
             //knock off the mineral and go to the depot
-            strafeSideEncoder(-0.3, 24);
+            strafeSideEncoder(-0.3, 20);
 
             //align to move to the crater
-            rotEncoder(0.3, 5.25);
-        }
-        else {
-            telemetry.addData("Gold Mineral Position", "Unknown");
+            rotEncoder(0.3, 4.75);
+
+            //release the marker
+            robot.markerMotor.setPower(-0.3);
+            sleep(1000);
+            robot.markerMotor.setPower(0);
+
+            //back up to park at the crater
+            strafeForwardEncoder(-0.6, 38);
+
+            telemetry.addData("Path", "Complete");
             telemetry.update();
-            //jewel position: middle or unknown
 
-            //align with the gold mineral in the center
-            strafeForwardEncoder(-0.3, 5);
-
-            //knock off the mineral and go to the depot
-            strafeSideEncoder(-0.3, 24);
-
-            //align to move to the crater
-            rotEncoder(0.3, 5.25);
+            stop();
         }
 
+
+
+
+        strafeForwardEncoder(0.3, 6);
+
+        if(checkGold()){
+            telemetry.addData("Gold Mineral Position", "Right");
+            telemetry.update();
+            //jewel position: right
+
+
+            //knock off the mineral and go to the wall
+            strafeSideEncoder(-0.3, 13);
+
+            //align with the depot
+            rotEncoder(0.3, 4.75);
+
+            //go closer to the depot
+            strafeSideEncoder(-0.3, 13.5);
+
+            //release the marker
+            robot.markerMotor.setPower(-0.3);
+            sleep(1000);
+            robot.markerMotor.setPower(0);
+
+            //back up to park at the crater
+            strafeForwardEncoder(-0.6, 38);
+
+            telemetry.addData("Path", "Complete");
+            telemetry.update();
+
+            stop();
+        }
+
+
+
+        strafeForwardEncoder(-0.3, 12);
+
+        //if(checkGold()) {
+        telemetry.addData("Gold Mineral Position", "Left");
+        telemetry.update();
+        //jewel position: left
+
+        //tfod.deactivate();
+
+        //knock off the jewel
+        strafeSideEncoder(-0.3, 15);
+
+        //align with the depot
+        rotEncoder(0.3, 4.75);
+
+        //move to the depot
+        strafeForwardEncoder(0.3, 6);
 
         //release the marker
         robot.markerMotor.setPower(-0.3);
@@ -278,13 +252,86 @@ public class AutoEncoderDepotLookAt2 extends LinearOpMode {
         //back up to park at the crater
         strafeForwardEncoder(-0.6, 38);
 
+        telemetry.addData("Path", "Complete");
+        telemetry.update();
+
+        stop();
+        //}
+
 
     }
+
+    private boolean checkGold(){
+        boolean isGold = false;
+
+        tfod.activate();
+
+        /*if (tfod != null) {
+            tfod.activate();
+        }*/
+
+        runtime.reset();
+        while(runtime.seconds() < 1.5) {
+            if (tfod != null) {
+                // getUpdatedRecognitions() will return null if no new information is available since
+                // the last time that call was made.
+                List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+                if (updatedRecognitions != null) {
+                    telemetry.addData("# Object Detected", updatedRecognitions.size());
+
+                    if (updatedRecognitions.size() == 1) {
+                        int goldMineralX;
+                        if (updatedRecognitions.get(0).getLabel().equals(LABEL_GOLD_MINERAL)) {
+                            goldMineralX = (int) updatedRecognitions.get(0).getLeft();
+                            isGold = true;
+                            telemetry.addData("isGold: ", "true");
+                            telemetry.update();
+                        } else {
+                            isGold = false;
+                            telemetry.addData("isGold: ", "false");
+                            telemetry.update();
+                        }
+                    }/*
+                    else if (updatedRecognitions.size() > 1){
+                        telemetry.addData("size is greater than 1: ", updatedRecognitions.size());
+                        telemetry.update();
+
+                        for (Recognition rec: updatedRecognitions){
+                            if(updatedRecognitions.get(0).getLabel().equals(LABEL_GOLD_MINERAL)){
+                                if(updatedRecognitions.get(0).getConfidence() >= 0.9){
+                                    telemetry.addData("isGold: ", "true");
+                                    telemetry.update();
+                                    isGold = true;
+                                }
+                            }
+                        }
+                    }
+                    else{
+                        telemetry.addData("Object detected?", isGold);
+                        telemetry.update();
+                    }*/
+                }
+                //telemetry.addData("Runtime: ", getRuntime());
+                //telemetry.update();
+            }
+        }
+
+        /*if (tfod != null) {
+            tfod.shutdown();
+        }*/
+
+        tfod.deactivate();
+
+        telemetry.addData("gold detected?", isGold);
+        telemetry.update();
+        return isGold;
+    }
+
 
     /*
      *  Method to move the robot, split into forward strafing, side strafing, and rotating
      */
-    public void strafeForwardEncoder(double speed, double fInches) {
+    private void strafeForwardEncoder(double speed, double fInches) {
         //negative power: strafe back, positive power: strafe forward
 
         speed = -speed;
@@ -356,7 +403,7 @@ public class AutoEncoderDepotLookAt2 extends LinearOpMode {
 
     }
 
-    public void strafeSideEncoder(double speed, double fInches) {
+    private void strafeSideEncoder(double speed, double fInches) {
         //negative power: strafe left, positive power: strafe right
 
         fInches = speed<0? -fInches: fInches;
@@ -426,7 +473,7 @@ public class AutoEncoderDepotLookAt2 extends LinearOpMode {
 
     }
 
-    public void rotEncoder(double speed, double fInches) {
+    private void rotEncoder(double speed, double fInches) {
         //negative power: rotate counterclockwise (left), positive power: rotate clockwise (right)
 
         fInches = speed<0? -fInches: fInches;
@@ -516,5 +563,41 @@ public class AutoEncoderDepotLookAt2 extends LinearOpMode {
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_GOLD_MINERAL, LABEL_SILVER_MINERAL);
     }
+
+    private Bitmap getBitmap() throws InterruptedException{
+        Frame frame;
+        Bitmap BM0 = Bitmap.createBitmap(new DisplayMetrics(), 100, 100, Bitmap.Config.RGB_565);
+        if(vuforia.getFrameQueue().peek() != null){
+            frame = vuforia.getFrameQueue().take();
+            for(int i = 0; i < frame.getNumImages(); i++){
+                if(frame.getImage(i).getFormat() == PIXEL_FORMAT.RGB565){
+                    Image image = frame.getImage(i);
+                    ByteBuffer pixels = image.getPixels();
+                    Matrix matrix = new Matrix();
+                    matrix.preScale(-1, -1);
+                    Bitmap bitmap = Bitmap.createBitmap(new DisplayMetrics(), image.getWidth(), image.getHeight(), Bitmap.Config.RGB_565);
+                    bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+                    bitmap.copyPixelsFromBuffer(pixels);
+                    return bitmap;
+                }
+            }
+        }
+        return BM0;
+    }
+/*
+    private void takePic() {
+        try{
+            Bitmap bitmap = getBitmap();
+            Bitmap newBitmap = RotateBitmap180(bitmap);
+            saveImageToExternalStorage(bitmap);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }*/
+
+
+
+
 
 }

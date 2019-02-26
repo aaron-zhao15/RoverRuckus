@@ -29,25 +29,30 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
+import android.util.DisplayMetrics;
+
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.sun.source.tree.LabeledStatementTree;
+import com.vuforia.Frame;
+import com.vuforia.Image;
+import com.vuforia.PIXEL_FORMAT;
 
-import org.firstinspires.ftc.robotcontroller.external.samples.HardwarePushbot;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
 
-@Autonomous(name = "EncoderDepot Wack")
-@Disabled
-public class AutoEncoderDepot extends LinearOpMode {
+@Autonomous(name = "EncoderDepotLookAt1 Speedy")
+
+public class AutoEncoderDepotLookAt1Fast extends LinearOpMode {
 
     /* Declare OpMode members. */
     HardwareConfig         robot   = new HardwareConfig();   // Use a Pushbot's hardware
@@ -123,31 +128,150 @@ public class AutoEncoderDepot extends LinearOpMode {
             robot.mFrontRight.getCurrentPosition();
         telemetry.update();
 
+        robot.liftMotor.setPower(0);
+
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
-        robot.liftMotor.setPower(-0.3);
-        sleep(4000);
+        robot.liftMotor.setPower(-0.8);
+        sleep(1500);
         robot.liftMotor.setPower(0);
 
-        strafeSideEncoder(0.3, 3);
+        //move to the right for a bit
+        strafeSideEncoder(0.3, 2);
 
-        robot.liftMotor.setPower(0.3);
-        sleep(4000);
+        robot.armTop.setPower(-0.2);
+        sleep(300);
+        robot.armTop.setPower(0);
+
+        strafeForwardEncoder(0.3, 1);
+
+        robot.liftMotor.setPower(0.8);
+        sleep(1500);
         robot.liftMotor.setPower(0);
 
-        rotEncoder(0.3, 16.5);
+        //move back
+        strafeSideEncoder(-0.4, 2);
 
-        strafeSideEncoder(-0.3, 3);
+        //move forward a bit
+        strafeForwardEncoder(0.4, 4);
 
-        // Step through each leg of the path,
-        // Note: Reverse movement is obtained by setting a negative distance (not speed)
-        if (tfod != null) {
-            tfod.activate();
+        //rotate camera towards the jewels
+        rotEncoder(-0.4, 8);
+
+        tfod.activate();
+
+        if(checkGold()){
+            telemetry.addData("Gold Mineral Position", "Center");
+            telemetry.update();
+            //jewel position: middle or unknown
+
+
+            //knock off the mineral and go to the depot
+            strafeSideEncoder(-0.4, 20);
+
+            //align to move to the crater
+            rotEncoder(0.4, 4.75);
+
+
+            strafeSideEncoder(-0.4, 4);
+
+            strafeForwardEncoder(-0.3, 2);
+
+            //release the marker
+            robot.markerMotor.setPower(-0.3);
+            sleep(1000);
+            robot.markerMotor.setPower(0);
+
+            //back up to park at the crater
+            strafeForwardEncoder(-0.6, 34);
+
+            telemetry.addData("Path", "Complete");
+            telemetry.update();
+
+            stop();
         }
 
-        while (getRuntime() < 15) {
+        strafeForwardEncoder(0.4, 6);
 
+        if(checkGold()){
+            telemetry.addData("Gold Mineral Position", "Right");
+            telemetry.update();
+            //jewel position: right
+
+
+            //knock off the mineral and go to the wall
+            strafeSideEncoder(-0.4, 13);
+
+            //align with the depot
+            rotEncoder(0.4, 5.25);
+
+            //go closer to the depot
+            strafeSideEncoder(-0.4, 13.5);
+
+            //release the marker
+            robot.markerMotor.setPower(-0.4);
+            sleep(1000);
+            robot.markerMotor.setPower(0);
+
+            //back up to park at the crater
+            strafeForwardEncoder(-0.6, 34);
+
+            telemetry.addData("Path", "Complete");
+            telemetry.update();
+
+            stop();
+        }
+
+        strafeForwardEncoder(-0.4, 12);
+
+        //if(checkGold()) {
+        telemetry.addData("Gold Mineral Position", "Left");
+        telemetry.update();
+        //jewel position: left
+
+        //knock off the jewel
+        strafeSideEncoder(-0.4, 15);
+
+        //align with the depot
+        rotEncoder(0.4, 5.25);
+
+        //move to the depot
+        strafeForwardEncoder(0.4, 6);
+
+        strafeSideEncoder(-0.4, 4);
+
+        strafeForwardEncoder(-0.3, 2);
+
+
+        //release the marker
+        robot.markerMotor.setPower(-0.4);
+        sleep(1000);
+        robot.markerMotor.setPower(0);
+
+        //back up to park at the crater
+        strafeForwardEncoder(-0.6, 34);
+
+        telemetry.addData("Path", "Complete");
+        telemetry.update();
+
+        stop();
+        //}
+
+
+    }
+
+    private boolean checkGold(){
+        boolean isGold = false;
+
+        //tfod.activate();
+
+//        if (tfod != null) {
+//            tfod.activate();
+//        }
+
+        runtime.reset();
+        while(runtime.seconds() < 1.5) {
             if (tfod != null) {
                 // getUpdatedRecognitions() will return null if no new information is available since
                 // the last time that call was made.
@@ -155,144 +279,88 @@ public class AutoEncoderDepot extends LinearOpMode {
                 if (updatedRecognitions != null) {
                     telemetry.addData("# Object Detected", updatedRecognitions.size());
 
-                    /*if (updatedRecognitions.size() == 1) {
-                        int goldMineralX = -1;
-                        int silverMineral1X = -1;
-                        int silverMineral2X = -1;
-                        for (Recognition recognition : updatedRecognitions) {
-                            if (recognition.getLabel().equals(LABEL_GOLD_MINERAL)) {
-                                goldMineralX = (int) recognition.getLeft();
-                            } else if (silverMineral1X == -1) {
-                                silverMineral1X = (int) recognition.getLeft();
-                            } else {
-                                silverMineral2X = (int) recognition.getLeft();
-                            }
-                        }
-                        if (silverMineral1X != -1 && silverMineral2X != -1) {
-                            jewelPos = 1;
-                            telemetry.addData("Gold Mineral Position", "Left");
-                            telemetry.update();
-                        } else if (goldMineralX != -1 && silverMineral1X != -1) {
-                            if (goldMineralX > silverMineral1X) {
-                                jewelPos = 3;
-                                telemetry.addData("Gold Mineral Position", "Right");
-                                telemetry.update();
-                            } else {
-                                jewelPos = 2;
-                                telemetry.addData("Gold Mineral Position", "Center");
-                                telemetry.update();
-                            }
-                        } else {
-                            telemetry.addData("Gold Mineral Position", "Unknown");
-                        }
-                    }*/
-
                     if (updatedRecognitions.size() == 1) {
                         int goldMineralX;
                         if (updatedRecognitions.get(0).getLabel().equals(LABEL_GOLD_MINERAL)) {
-                            telemetry.addData("Gold Position; ", "middle");
-                            telemetry.update();
                             goldMineralX = (int) updatedRecognitions.get(0).getLeft();
-                            if (goldMineralX < 0) {
-                                strafeForwardEncoder(-0.3, 0.5);
-                            } else if (goldMineralX > 0) {
-                                strafeForwardEncoder(0.3, 0.5);
-                            } else {
-                                strafeSideEncoder(-0.3, 30);
-                                rotEncoder(-0.3, 8.25);
-                                break;
-                            }
+                            isGold = true;
+                            telemetry.addData("isGold: ", "true");
+                            telemetry.update();
+                        } else {
+                            isGold = false;
+                            telemetry.addData("isGold: ", "false");
+                            telemetry.update();
                         }
-                        else {
-                            strafeForwardEncoder(0.3, 12);
-                            if (updatedRecognitions.get(0).getLabel().equals(LABEL_GOLD_MINERAL)) {
-                                telemetry.addData("Gold Position; ", "right");
-                                telemetry.update();
-                                goldMineralX = (int) updatedRecognitions.get(0).getLeft();
-                                if (goldMineralX < 0) {
-                                    strafeForwardEncoder(-0.3, 0.5);
-                                } else if (goldMineralX > 0) {
-                                    strafeForwardEncoder(0.3, 0.5);
-                                } else {
-                                    strafeSideEncoder(-0.3, 24);
-                                    rotEncoder(-0.3, 8.25);
-                                    strafeForwardEncoder(-0.3, 10);
-                                    break;
-                                }
-                            }
-                            else {
-                                strafeForwardEncoder(-0.3, 24);
-                                if (updatedRecognitions.get(0).getLabel().equals(LABEL_GOLD_MINERAL)) {
-                                    telemetry.addData("Gold Position; ", "left");
+                    }
+                    else if (updatedRecognitions.size() > 1){
+                        telemetry.addData("size is greater than 1: ", updatedRecognitions.size());
+                        telemetry.update();
+
+                        for (Recognition rec: updatedRecognitions){
+                            if(updatedRecognitions.get(0).getLabel().equals(LABEL_GOLD_MINERAL)){
+                                if(updatedRecognitions.get(0).getConfidence() >= 0.9){
+                                    telemetry.addData("isGold: ", "true");
                                     telemetry.update();
-                                    goldMineralX = (int) updatedRecognitions.get(0).getLeft();
-                                    if (goldMineralX < 0) {
-                                        strafeForwardEncoder(-0.3, 0.5);
-                                    } else if (goldMineralX > 0) {
-                                        strafeForwardEncoder(0.3, 0.5);
-                                    } else {
-                                        strafeSideEncoder(-0.3, 24);
-                                        rotEncoder(-0.3, 16.5);
-                                        strafeForwardEncoder(-0.3, 24);
-                                        break;
-                                    }
+                                    isGold = true;
+                                }
+                                else{
+                                    isGold = false;
                                 }
                             }
                         }
                     }
-
+                    else{
+                        telemetry.addData("Object detected?", isGold);
+                        telemetry.update();
+                    }
                 }
+//                telemetry.addData("Runtime: ", getRuntime());
+//                telemetry.update();
             }
-            telemetry.addData("Runtime: ", getRuntime());
-            telemetry.update();
         }
 
-        if (tfod != null) {
-            tfod.shutdown();
-        }
+//        if (tfod != null) {
+//            tfod.shutdown();
+//        }
 
-        //deposit the marker
-        robot.markerMotor.setPower(-0.3);
-        sleep(1000);
-        robot.markerMotor.setPower(0);
+        //tfod.deactivate();
 
-
-        strafeForwardEncoder(-0.5, 62);
-
-        rotEncoder(0.3, 33);
-
-
-        robot.armBot.setPower(-0.3);
-        sleep(2000);
-        robot.armBot.setPower(0);
-
-        telemetry.addData("Path", "Complete");
-        telemetry.update();
+        return isGold;
     }
+
 
     /*
      *  Method to move the robot, split into forward strafing, side strafing, and rotating
      */
-    public void strafeForwardEncoder(double speed, double fInches) {
+    private void strafeForwardEncoder(double speed, double fInches) {
         //negative power: strafe back, positive power: strafe forward
+
+        speed = -speed;
+
+        fInches = speed<0? -fInches: fInches;
 
         int newBLTarget;
         int newBRTarget;
         int newFLTarget;
         int newFRTarget;
 
-        double y1 = -speed;
+        double y1 = speed;
 
         double bl = y1;
         double br = y1;
         double fl = y1;
         double fr = y1;
 
+        robot.mBackLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.mBackRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.mFrontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.mFrontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
         // Determine new target position, and pass to motor controller
-        newBLTarget = robot.mBackLeft.getCurrentPosition() + (int)(fInches * COUNTS_PER_INCH);
-        newBRTarget = robot.mBackRight.getCurrentPosition() + (int)(fInches * COUNTS_PER_INCH);
-        newFLTarget = robot.mFrontLeft.getCurrentPosition() + (int)(fInches * COUNTS_PER_INCH);
-        newFRTarget = robot.mFrontRight.getCurrentPosition() + (int)(fInches * COUNTS_PER_INCH);
+        newBLTarget = (int)(fInches * COUNTS_PER_INCH);
+        newBRTarget = (int)(fInches * COUNTS_PER_INCH);
+        newFLTarget = (int)(fInches * COUNTS_PER_INCH);
+        newFRTarget = (int)(fInches * COUNTS_PER_INCH);
 
         robot.mBackLeft.setTargetPosition(newBLTarget);
         robot.mBackRight.setTargetPosition(newBRTarget);
@@ -314,7 +382,11 @@ public class AutoEncoderDepot extends LinearOpMode {
 
         while (robot.mBackRight.isBusy() && robot.mBackLeft.isBusy()
                 && robot.mFrontRight.isBusy() && robot.mFrontLeft.isBusy()){
-
+            telemetry.addData("BL tick count: ", robot.mBackLeft.getCurrentPosition());
+            telemetry.addData("BR tick count: ", robot.mBackRight.getCurrentPosition());
+            telemetry.addData("FL tick count: ", robot.mFrontLeft.getCurrentPosition());
+            telemetry.addData("FR tick count: ", robot.mFrontRight.getCurrentPosition());
+            telemetry.update();
         }
 
         robot.mBackLeft.setPower(0);
@@ -332,8 +404,10 @@ public class AutoEncoderDepot extends LinearOpMode {
 
     }
 
-    public void strafeSideEncoder(double speed, double fInches) {
+    private void strafeSideEncoder(double speed, double fInches) {
         //negative power: strafe left, positive power: strafe right
+
+        fInches = speed<0? -fInches: fInches;
 
         int newBLTarget;
         int newBRTarget;
@@ -347,11 +421,16 @@ public class AutoEncoderDepot extends LinearOpMode {
         double fl = -x2;
         double fr = x2;
 
+        robot.mBackLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.mBackRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.mFrontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.mFrontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
         // Determine new target position, and pass to motor controller
-        newBLTarget = robot.mBackLeft.getCurrentPosition() + (int)(fInches * COUNTS_PER_INCH);
-        newBRTarget = robot.mBackRight.getCurrentPosition() + (int)(fInches * COUNTS_PER_INCH);
-        newFLTarget = robot.mFrontLeft.getCurrentPosition() + (int)(fInches * COUNTS_PER_INCH);
-        newFRTarget = robot.mFrontRight.getCurrentPosition() + (int)(fInches * COUNTS_PER_INCH);
+        newBLTarget = (int)(fInches * COUNTS_PER_INCH);
+        newBRTarget = -(int)(fInches * COUNTS_PER_INCH);
+        newFLTarget = -(int)(fInches * COUNTS_PER_INCH);
+        newFRTarget = (int)(fInches * COUNTS_PER_INCH);
 
         robot.mBackLeft.setTargetPosition(newBLTarget);
         robot.mBackRight.setTargetPosition(newBRTarget);
@@ -373,7 +452,11 @@ public class AutoEncoderDepot extends LinearOpMode {
 
         while (robot.mBackRight.isBusy() && robot.mBackLeft.isBusy()
                 && robot.mFrontRight.isBusy() && robot.mFrontLeft.isBusy()){
-
+            telemetry.addData("BL tick count: ", robot.mBackLeft.getCurrentPosition());
+            telemetry.addData("BR tick count: ", robot.mBackRight.getCurrentPosition());
+            telemetry.addData("FL tick count: ", robot.mFrontLeft.getCurrentPosition());
+            telemetry.addData("FR tick count: ", robot.mFrontRight.getCurrentPosition());
+            telemetry.update();
         }
 
         robot.mBackLeft.setPower(0);
@@ -391,26 +474,33 @@ public class AutoEncoderDepot extends LinearOpMode {
 
     }
 
-    public void rotEncoder(double speed, double fInches) {
+    private void rotEncoder(double speed, double fInches) {
         //negative power: rotate counterclockwise (left), positive power: rotate clockwise (right)
+
+        fInches = speed<0? -fInches: fInches;
 
         int newBLTarget;
         int newBRTarget;
         int newFLTarget;
         int newFRTarget;
 
-        double x1 = -speed;
+        double x1 = speed;
 
         double bl = -x1;
         double br = x1;
         double fl = -x1;
         double fr = x1;
 
+        robot.mBackLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.mBackRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.mFrontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.mFrontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
         // Determine new target position, and pass to motor controller
-        newBLTarget = robot.mBackLeft.getCurrentPosition() + (int)(fInches * COUNTS_PER_INCH);
-        newBRTarget = robot.mBackRight.getCurrentPosition() + (int)(fInches * COUNTS_PER_INCH);
-        newFLTarget = robot.mFrontLeft.getCurrentPosition() + (int)(fInches * COUNTS_PER_INCH);
-        newFRTarget = robot.mFrontRight.getCurrentPosition() + (int)(fInches * COUNTS_PER_INCH);
+        newBLTarget = -(int)(fInches * COUNTS_PER_INCH);
+        newBRTarget = (int)(fInches * COUNTS_PER_INCH);
+        newFLTarget = -(int)(fInches * COUNTS_PER_INCH);
+        newFRTarget = (int)(fInches * COUNTS_PER_INCH);
 
         robot.mBackLeft.setTargetPosition(newBLTarget);
         robot.mBackRight.setTargetPosition(newBRTarget);
@@ -432,7 +522,11 @@ public class AutoEncoderDepot extends LinearOpMode {
 
         while (robot.mBackRight.isBusy() && robot.mBackLeft.isBusy()
                 && robot.mFrontRight.isBusy() && robot.mFrontLeft.isBusy()){
-
+            telemetry.addData("BL tick count: ", robot.mBackLeft.getCurrentPosition());
+            telemetry.addData("BR tick count: ", robot.mBackRight.getCurrentPosition());
+            telemetry.addData("FL tick count: ", robot.mFrontLeft.getCurrentPosition());
+            telemetry.addData("FR tick count: ", robot.mFrontRight.getCurrentPosition());
+            telemetry.update();
         }
 
         robot.mBackLeft.setPower(0);
@@ -470,5 +564,41 @@ public class AutoEncoderDepot extends LinearOpMode {
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_GOLD_MINERAL, LABEL_SILVER_MINERAL);
     }
+
+    private Bitmap getBitmap() throws InterruptedException{
+        Frame frame;
+        Bitmap BM0 = Bitmap.createBitmap(new DisplayMetrics(), 100, 100, Bitmap.Config.RGB_565);
+        if(vuforia.getFrameQueue().peek() != null){
+            frame = vuforia.getFrameQueue().take();
+            for(int i = 0; i < frame.getNumImages(); i++){
+                if(frame.getImage(i).getFormat() == PIXEL_FORMAT.RGB565){
+                    Image image = frame.getImage(i);
+                    ByteBuffer pixels = image.getPixels();
+                    Matrix matrix = new Matrix();
+                    matrix.preScale(-1, -1);
+                    Bitmap bitmap = Bitmap.createBitmap(new DisplayMetrics(), image.getWidth(), image.getHeight(), Bitmap.Config.RGB_565);
+                    bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+                    bitmap.copyPixelsFromBuffer(pixels);
+                    return bitmap;
+                }
+            }
+        }
+        return BM0;
+    }
+/*
+    private void takePic() {
+        try{
+            Bitmap bitmap = getBitmap();
+            Bitmap newBitmap = RotateBitmap180(bitmap);
+            saveImageToExternalStorage(bitmap);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }*/
+
+
+
+
 
 }

@@ -29,6 +29,9 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import android.graphics.Bitmap;
+import android.util.DisplayMetrics;
+
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -39,12 +42,16 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
+import com.vuforia.*;
+import android.graphics.*;
+
+import java.nio.ByteBuffer;
 import java.util.List;
 
 
-@Autonomous(name = "EncoderDepotLookAt2 w/o drop")
+@Autonomous(name = "EncoderDepotLookAt2 With Drop")
 
-public class AutoEncoderDepotLookAt2 extends LinearOpMode {
+public class AutoEncoderDepotLookAt2V2 extends LinearOpMode {
 
     /* Declare OpMode members. */
     HardwareConfig         robot   = new HardwareConfig();   // Use a Pushbot's hardware
@@ -114,14 +121,14 @@ public class AutoEncoderDepotLookAt2 extends LinearOpMode {
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-/*
+
         robot.liftMotor.setPower(-0.8);
         sleep(2000);
         robot.liftMotor.setPower(0);
-*/
+
         //move to the right for a bit
         strafeSideEncoder(0.3, 2);
-/*
+
         robot.armTop.setPower(-0.2);
         sleep(250);
         robot.armTop.setPower(0);
@@ -130,7 +137,7 @@ public class AutoEncoderDepotLookAt2 extends LinearOpMode {
         sleep(2000);
         robot.liftMotor.setPower(0);
 
-*/
+
         //turn to face the jewels
         rotEncoder(-0.3, 10.5);
 
@@ -155,17 +162,17 @@ public class AutoEncoderDepotLookAt2 extends LinearOpMode {
                 if (updatedRecognitions != null) {
                     telemetry.addData("# Object Detected", updatedRecognitions.size());
 
-                    if (updatedRecognitions.size() == 2) {
+                    if (updatedRecognitions.size() == 1) {
                         int goldMineralX = -1;
                         int silverMineral1X = -1;
                         int silverMineral2X = -1;
                         for (Recognition recognition : updatedRecognitions) {
                             if (recognition.getLabel().equals(LABEL_GOLD_MINERAL)) {
-                                goldMineralX = (int) recognition.getLeft();
+                                goldMineralX = (int) recognition.getTop();
                             } else if (silverMineral1X == -1) {
-                                silverMineral1X = (int) recognition.getLeft();
+                                silverMineral1X = (int) recognition.getTop();
                             } else {
-                                silverMineral2X = (int) recognition.getLeft();
+                                silverMineral2X = (int) recognition.getTop();
                             }
                         }
                         if (silverMineral1X != -1 && silverMineral2X != -1) {
@@ -516,5 +523,38 @@ public class AutoEncoderDepotLookAt2 extends LinearOpMode {
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_GOLD_MINERAL, LABEL_SILVER_MINERAL);
     }
+
+    private Bitmap getBitmap() throws InterruptedException{
+        Frame frame;
+        Bitmap BM0 = Bitmap.createBitmap(new DisplayMetrics(), 100, 100, Bitmap.Config.RGB_565);
+        if(vuforia.getFrameQueue().peek() != null){
+            frame = vuforia.getFrameQueue().take();
+            for(int i = 0; i < frame.getNumImages(); i++){
+                if(frame.getImage(i).getFormat() == PIXEL_FORMAT.RGB565){
+                    Image image = frame.getImage(i);
+                    ByteBuffer pixels = image.getPixels();
+                    Matrix matrix = new Matrix();
+                    matrix.preScale(-1, -1);
+                    Bitmap bitmap = Bitmap.createBitmap(new DisplayMetrics(), image.getWidth(), image.getHeight(), Bitmap.Config.RGB_565);
+                    bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+                    bitmap.copyPixelsFromBuffer(pixels);
+                    return bitmap;
+                }
+            }
+        }
+        return BM0;
+    }
+/*
+    private void takePic() {
+        try{
+            Bitmap bitmap = getBitmap();
+            Bitmap newBitmap = RotateBitmap180(bitmap);
+            saveImageToExternalStorage(bitmap);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }*/
+
 
 }

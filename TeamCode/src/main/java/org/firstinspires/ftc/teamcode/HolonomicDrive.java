@@ -54,10 +54,14 @@ public class HolonomicDrive extends LinearOpMode {
             boolean clawUp = gamepad1.y;
             boolean clawDown = gamepad1.a;
 
+//            boolean intake = (gamepad1.left_trigger > 0);
+
             double bl = y1-x1+x2;
             double br = y1+x1-x2;
             double fl = y1-x1-x2;
             double fr = y1+x1+x2;
+
+
 
             /*
             bl = Math.pow(bl, 3);
@@ -95,10 +99,10 @@ public class HolonomicDrive extends LinearOpMode {
             }
 
             if (rotYAdd) {
-                robot.armTop.setPower(0.3);
+                robot.armTop.setPower(0.4);
             }
             if (rotYSub) {
-                robot.armTop.setPower(-0.3);
+                robot.armTop.setPower(-0.4);
             }
 
             if (liftUp){
@@ -107,6 +111,10 @@ public class HolonomicDrive extends LinearOpMode {
             if (liftDown){
                 robot.liftMotor.setPower(1);
             }
+//            if (intake){
+//                robot.intakeServo.setPower(-1);
+//            }
+
 
 
             /*
@@ -146,8 +154,11 @@ public class HolonomicDrive extends LinearOpMode {
             robot.armBot.setPower(0);
             robot.armTop.setPower(0);
             robot.liftMotor.setPower(0);
+//            robot.intakeServo.setPower(0);
 
             robot.intakeServo.setPosition(0.5-(intake/2));
+
+
 
             robotDrive(bl, br, fl, fr);
 
