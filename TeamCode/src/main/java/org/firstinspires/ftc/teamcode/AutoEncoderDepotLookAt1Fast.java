@@ -133,25 +133,25 @@ public class AutoEncoderDepotLookAt1Fast extends LinearOpMode {
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
-        robot.liftMotor.setPower(-0.8);
+        robot.armBot.setPower(0);
+        robot.armTop.setPower(0);
+
+        robot.liftMotor.setPower(0.8);
         sleep(1500);
         robot.liftMotor.setPower(0);
 
         //move to the right for a bit
         strafeSideEncoder(0.3, 2);
 
-        robot.armTop.setPower(-0.2);
-        sleep(300);
-        robot.armTop.setPower(0);
 
         strafeForwardEncoder(0.3, 1);
 
-        robot.liftMotor.setPower(0.8);
+        robot.liftMotor.setPower(-0.8);
         sleep(1500);
         robot.liftMotor.setPower(0);
 
         //move back
-        strafeSideEncoder(-0.4, 2);
+        strafeSideEncoder(-0.4, 1);
 
         //move forward a bit
         strafeForwardEncoder(0.4, 4);
@@ -166,17 +166,23 @@ public class AutoEncoderDepotLookAt1Fast extends LinearOpMode {
             telemetry.update();
             //jewel position: middle or unknown
 
+            tfod.deactivate();
 
             //knock off the mineral and go to the depot
-            strafeSideEncoder(-0.4, 20);
+            strafeSideEncoder(-0.5, 20);
 
             //align to move to the crater
-            rotEncoder(0.4, 4.75);
+            rotEncoder(0.5, 4.75);
 
+            //align with the wall
+            strafeSideEncoder(-0.4, 3.5);
 
-            strafeSideEncoder(-0.4, 4);
+            //move back out
+            strafeSideEncoder(0.2, 0.5);
 
+            //give space for depositing  the marker
             strafeForwardEncoder(-0.3, 2);
+
 
             //release the marker
             robot.markerMotor.setPower(-0.3);
@@ -184,10 +190,17 @@ public class AutoEncoderDepotLookAt1Fast extends LinearOpMode {
             robot.markerMotor.setPower(0);
 
             //back up to park at the crater
-            strafeForwardEncoder(-0.6, 34);
+            strafeForwardEncoder(-0.6, 26);
+
+            robot.armTop.setPower(-0.4);
+            sleep(300);
+            robot.armTop.setPower(0);
+
 
             telemetry.addData("Path", "Complete");
             telemetry.update();
+
+            sleep(3000);
 
             stop();
         }
@@ -199,15 +212,19 @@ public class AutoEncoderDepotLookAt1Fast extends LinearOpMode {
             telemetry.update();
             //jewel position: right
 
+            tfod.deactivate();
 
             //knock off the mineral and go to the wall
-            strafeSideEncoder(-0.4, 13);
+            strafeSideEncoder(-0.5, 13);
 
             //align with the depot
-            rotEncoder(0.4, 5.25);
+            rotEncoder(0.4, 4.5);
 
             //go closer to the depot
-            strafeSideEncoder(-0.4, 13.5);
+            strafeSideEncoder(-0.5, 13.5);
+
+            //move back out
+            strafeSideEncoder(0.2, 0.5);
 
             //release the marker
             robot.markerMotor.setPower(-0.4);
@@ -215,34 +232,43 @@ public class AutoEncoderDepotLookAt1Fast extends LinearOpMode {
             robot.markerMotor.setPower(0);
 
             //back up to park at the crater
-            strafeForwardEncoder(-0.6, 34);
+            strafeForwardEncoder(-0.6, 25);
+
+            robot.armTop.setPower(-0.4);
+            sleep(300);
+            robot.armTop.setPower(0);
 
             telemetry.addData("Path", "Complete");
             telemetry.update();
 
+            sleep(3000);
+
             stop();
         }
 
-        strafeForwardEncoder(-0.4, 12);
+        strafeForwardEncoder(-0.6, 12);
 
         //if(checkGold()) {
         telemetry.addData("Gold Mineral Position", "Left");
         telemetry.update();
         //jewel position: left
 
+        tfod.deactivate();
+
         //knock off the jewel
-        strafeSideEncoder(-0.4, 15);
+        strafeSideEncoder(-0.6, 15);
 
         //align with the depot
-        rotEncoder(0.4, 5.25);
+        rotEncoder(0.4, 5);
 
         //move to the depot
         strafeForwardEncoder(0.4, 6);
 
-        strafeSideEncoder(-0.4, 4);
+        //align using the wall
+        strafeSideEncoder(-0.4, 2);
 
-        strafeForwardEncoder(-0.3, 2);
-
+        //move back out
+        strafeSideEncoder(0.2, 0.5);
 
         //release the marker
         robot.markerMotor.setPower(-0.4);
@@ -250,10 +276,17 @@ public class AutoEncoderDepotLookAt1Fast extends LinearOpMode {
         robot.markerMotor.setPower(0);
 
         //back up to park at the crater
-        strafeForwardEncoder(-0.6, 34);
+        strafeForwardEncoder(-0.6, 26);
+
+        robot.armTop.setPower(-0.4);
+        sleep(300);
+        robot.armTop.setPower(0);
+
 
         telemetry.addData("Path", "Complete");
         telemetry.update();
+
+        sleep(3000);
 
         stop();
         //}
@@ -264,14 +297,8 @@ public class AutoEncoderDepotLookAt1Fast extends LinearOpMode {
     private boolean checkGold(){
         boolean isGold = false;
 
-        //tfod.activate();
-
-//        if (tfod != null) {
-//            tfod.activate();
-//        }
-
         runtime.reset();
-        while(runtime.seconds() < 1.5) {
+        while(runtime.seconds() < 2) {
             if (tfod != null) {
                 // getUpdatedRecognitions() will return null if no new information is available since
                 // the last time that call was made.
@@ -297,14 +324,11 @@ public class AutoEncoderDepotLookAt1Fast extends LinearOpMode {
                         telemetry.update();
 
                         for (Recognition rec: updatedRecognitions){
-                            if(updatedRecognitions.get(0).getLabel().equals(LABEL_GOLD_MINERAL)){
-                                if(updatedRecognitions.get(0).getConfidence() >= 0.9){
+                            if(rec.getLabel().equals(LABEL_GOLD_MINERAL)){
+                                if(rec.getConfidence() >= 0.9){
                                     telemetry.addData("isGold: ", "true");
                                     telemetry.update();
                                     isGold = true;
-                                }
-                                else{
-                                    isGold = false;
                                 }
                             }
                         }
@@ -319,11 +343,6 @@ public class AutoEncoderDepotLookAt1Fast extends LinearOpMode {
             }
         }
 
-//        if (tfod != null) {
-//            tfod.shutdown();
-//        }
-
-        //tfod.deactivate();
 
         return isGold;
     }
@@ -564,7 +583,7 @@ public class AutoEncoderDepotLookAt1Fast extends LinearOpMode {
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_GOLD_MINERAL, LABEL_SILVER_MINERAL);
     }
-
+/*
     private Bitmap getBitmap() throws InterruptedException{
         Frame frame;
         Bitmap BM0 = Bitmap.createBitmap(new DisplayMetrics(), 100, 100, Bitmap.Config.RGB_565);
@@ -585,7 +604,7 @@ public class AutoEncoderDepotLookAt1Fast extends LinearOpMode {
         }
         return BM0;
     }
-/*
+
     private void takePic() {
         try{
             Bitmap bitmap = getBitmap();

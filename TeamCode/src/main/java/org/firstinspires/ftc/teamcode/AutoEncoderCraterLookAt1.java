@@ -50,7 +50,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 
-@Autonomous(name = "EncoderCraterLookAt1")
+@Autonomous(name = "EncoderCraterLookAt1 Updated")
 
 public class AutoEncoderCraterLookAt1 extends LinearOpMode {
 
@@ -128,36 +128,31 @@ public class AutoEncoderCraterLookAt1 extends LinearOpMode {
             robot.mFrontRight.getCurrentPosition();
         telemetry.update();
 
-        robot.liftMotor.setPower(0);
+        robot.armBot.setPower(0);
+        robot.armTop.setPower(0);
 
-        // Wait for the game to start (driver presses PLAY)
-        waitForStart();
-
-        robot.liftMotor.setPower(-0.8);
+        robot.liftMotor.setPower(0.8);
         sleep(1500);
         robot.liftMotor.setPower(0);
 
         //move to the right for a bit
         strafeSideEncoder(0.3, 2);
 
-        robot.armTop.setPower(-0.2);
-        sleep(300);
-        robot.armTop.setPower(0);
 
         strafeForwardEncoder(0.3, 1);
 
-        robot.liftMotor.setPower(0.8);
+        robot.liftMotor.setPower(-0.8);
         sleep(1500);
         robot.liftMotor.setPower(0);
 
         //move back
-        strafeSideEncoder(-0.3, 2);
+        strafeSideEncoder(-0.4, 1);
 
         //move forward a bit
-        strafeForwardEncoder(0.3, 4);
+        strafeForwardEncoder(0.4, 4);
 
         //rotate camera towards the jewels
-        rotEncoder(-0.3, 9);
+        rotEncoder(-0.4, 8);
 
         tfod.activate();
 
@@ -166,53 +161,50 @@ public class AutoEncoderCraterLookAt1 extends LinearOpMode {
             telemetry.update();
             //jewel position: middle or unknown
 
-            //knock off the mineral and go to the depot
+            tfod.deactivate();
+
+            //knock off the mineral
             strafeSideEncoder(-0.3, 10);
 
-
-
-
-            telemetry.addData("Path", "Complete");
-            telemetry.update();
 
             stop();
         }
 
-        strafeForwardEncoder(0.3, 6);
+        strafeForwardEncoder(0.4, 6);
 
         if(checkGold()){
             telemetry.addData("Gold Mineral Position", "Right");
             telemetry.update();
             //jewel position: right
 
+            tfod.deactivate();
 
             //knock off the mineral and go to the wall
             strafeSideEncoder(-0.3, 10);
 
-
-
-            telemetry.addData("Path", "Complete");
-            telemetry.update();
-
             stop();
         }
 
-        strafeForwardEncoder(-0.3, 12);
+        strafeForwardEncoder(-0.6, 12);
 
         //if(checkGold()) {
-            telemetry.addData("Gold Mineral Position", "Left");
-            telemetry.update();
-            //jewel position: left
+        telemetry.addData("Gold Mineral Position", "Left");
+        telemetry.update();
+        //jewel position: left
 
-            //knock off the jewel
-            strafeSideEncoder(-0.3, 10);
+        tfod.deactivate();
+
+        //knock off the jewel
+        strafeSideEncoder(-0.3, 10);
 
 
 
-            telemetry.addData("Path", "Complete");
-            telemetry.update();
+        telemetry.addData("Path", "Complete");
+        telemetry.update();
 
-            stop();
+        sleep(3000);
+
+        stop();
         //}
 
 
@@ -221,14 +213,8 @@ public class AutoEncoderCraterLookAt1 extends LinearOpMode {
     private boolean checkGold(){
         boolean isGold = false;
 
-//        tfod.activate();
-//
-//        if (tfod != null) {
-//            tfod.activate();
-//        }
-
         runtime.reset();
-        while(runtime.seconds() < 1.5) {
+        while(runtime.seconds() < 2) {
             if (tfod != null) {
                 // getUpdatedRecognitions() will return null if no new information is available since
                 // the last time that call was made.
@@ -254,14 +240,11 @@ public class AutoEncoderCraterLookAt1 extends LinearOpMode {
                         telemetry.update();
 
                         for (Recognition rec: updatedRecognitions){
-                            if(updatedRecognitions.get(0).getLabel().equals(LABEL_GOLD_MINERAL)){
-                                if(updatedRecognitions.get(0).getConfidence() >= 0.9){
+                            if(rec.getLabel().equals(LABEL_GOLD_MINERAL)){
+                                if(rec.getConfidence() >= 0.9){
                                     telemetry.addData("isGold: ", "true");
                                     telemetry.update();
                                     isGold = true;
-                                }
-                                else{
-                                    isGold = false;
                                 }
                             }
                         }
@@ -276,11 +259,6 @@ public class AutoEncoderCraterLookAt1 extends LinearOpMode {
             }
         }
 
-//        if (tfod != null) {
-//            tfod.shutdown();
-//        }
-
-//        tfod.deactivate();
 
         return isGold;
     }

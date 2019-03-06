@@ -37,6 +37,7 @@ public class HolonomicDrive extends LinearOpMode {
             boolean rotZSub = gamepad1.dpad_left;
 
             double intake = (double)gamepad1.left_trigger;
+            boolean release = gamepad1.left_bumper;
 
             boolean rotIntake = gamepad1.left_bumper;
 
@@ -99,10 +100,10 @@ public class HolonomicDrive extends LinearOpMode {
             }
 
             if (rotYAdd) {
-                robot.armTop.setPower(0.4);
+                robot.armTop.setPower(0.6);
             }
             if (rotYSub) {
-                robot.armTop.setPower(-0.4);
+                robot.armTop.setPower(-0.6);
             }
 
             if (liftUp){
@@ -111,6 +112,12 @@ public class HolonomicDrive extends LinearOpMode {
             if (liftDown){
                 robot.liftMotor.setPower(1);
             }
+            if (release) {
+                robot.intakeServo.setPosition(1);
+
+            }
+
+
 //            if (intake){
 //                robot.intakeServo.setPower(-1);
 //            }

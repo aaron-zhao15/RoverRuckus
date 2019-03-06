@@ -54,7 +54,7 @@ import java.util.List;
 
 
 @Autonomous(name = "EncoderDepotLookAt1")
-
+@Disabled
 public class AutoEncoderDepotLookAt1 extends LinearOpMode {
 
     /* Declare OpMode members. */
